@@ -14,6 +14,11 @@
 /front/dist/
 /front/.vite/
 
+# Raw Google Fonts download (~10 MB, 41 files) kept on disk for reference. Only the
+# two faces the site actually uses are committed, under front/src/assets/fonts/.
+# Safe to delete locally — nothing imports from this folder.
+/front/src/assets/Cairo,IBM_Plex_Sans_Arabic,Montserrat/
+
 # --- Laravel runtime ---
 # storage/app/public holds media uploaded at runtime, plus the seeder's copies of
 # the source photos. The originals live in front/public/images and ARE committed,

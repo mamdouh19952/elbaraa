@@ -135,13 +135,21 @@ at the top of `assets/main.css`:
 | `gold-*` | The brand accent. Currently orange `#FD7E14` (from the Figma template) |
 | `ink-*` | Neutral ramp, `50` (near-white) → `950` (black) |
 | `cream`, `cream-deep` | Page and panel backgrounds |
-| `--font-display` | Poppins — headings |
-| `--font-sans` | Inter — body |
+| `--font-display` | Poppins — Latin headings |
+| `--font-sans` | Inter — Latin body |
+| `--font-display-ar` | IBM Plex Sans Arabic — Arabic headings |
+| `--font-sans-ar` | Cairo — Arabic body |
 
 > The scale is still **named** `gold-*` from an earlier palette. Changing the whole site's accent
 > colour is a one-line-per-stop edit in `@theme` — no component changes needed.
 
-Arabic uses **Cairo** for both roles, since Poppins and Inter have no Arabic glyphs.
+Arabic uses its own faces, because Poppins and Inter have no Arabic glyphs. They are
+**self-hosted** from `src/assets/fonts/` (declared as `@font-face` at the top of `main.css`) and
+apply only under `html[lang='ar']` — the Latin faces still load from Google Fonts in `index.html`.
+
+Only the weights actually used are shipped: Cairo's single variable file covers every weight, and
+IBM Plex ships Bold alone because Arabic headings are always bold. Licences (SIL OFL) sit beside
+the files.
 
 Reusable classes (`.btn-gold`, `.btn-outline`, `.card`, `.eyebrow`, `.field-input`, `.media-frame`)
 are defined in the same file. Prefer them over re-typing long utility strings.

@@ -1,10 +1,36 @@
 @import 'tailwindcss';
 
+/* --- Arabic typefaces, self-hosted from src/assets/fonts ---------------------
+   Only the Arabic side is self-hosted; the Latin faces (Poppins/Inter) still
+   come from Google Fonts via index.html. Weights not declared here are never
+   downloaded, which is why only Cairo's variable file and IBM Plex's Bold ship.
+   Licences: SIL OFL, see fonts/*-OFL.txt next to the files. */
+
+/* Body text — one variable file covers every weight the UI uses. */
+@font-face {
+  font-family: 'Cairo';
+  src: url('./fonts/Cairo-Variable.ttf') format('truetype-variations');
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Headings only, and Arabic headings are always bold — so a single cut is
+   enough and there is no reason to ship the other six weights. */
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  src: url('./fonts/IBMPlexSansArabic-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Tokens taken from the Petshop Figma template (file Uy5srseFiwP9tcdrZrWhNu):
    Orange/500 #FD7E14, Gray/100 #F8F9FA, Black #000000, White #FFFFFF, with
    Poppins for headings and Inter for body. The `gold-*` scale name is kept so
    the whole codebase keeps working, but every stop now ramps to that orange.
-   Cairo stands in for Arabic, since Poppins/Inter have no Arabic coverage. */
+   Arabic uses the self-hosted faces above, since Poppins/Inter have no Arabic
+   glyphs (and neither does Montserrat — it cannot serve Arabic at all). */
 @theme {
   --color-gold-50: #fff4ec;
   --color-gold-100: #ffe4d1;
@@ -33,10 +59,13 @@
   --color-cream: #ffffff;
   --color-cream-deep: #f8f9fa;
 
-  --font-display: 'Poppins', 'Cairo', ui-sans-serif, system-ui, sans-serif;
-  --font-display-ar: 'Cairo', 'Poppins', sans-serif;
-  --font-sans: 'Inter', 'Cairo', ui-sans-serif, system-ui, sans-serif;
-  --font-sans-ar: 'Cairo', 'Inter', sans-serif;
+  /* Latin (default) */
+  --font-display: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Arabic — applied only under html[lang='ar'] (see @layer base below) */
+  --font-display-ar: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+  --font-sans-ar: 'Cairo', sans-serif;
 }
 
 @layer base {
