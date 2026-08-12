@@ -1,0 +1,678 @@
+{
+  "info": {
+    "name": "El Baraa Arabians — API",
+    "description": "REST API for the El Baraa Arabians horse stud (مربط البراء).\n\n## Setup\n\n1. Import this collection into Postman.\n2. Open the collection's **Variables** tab and set `base_url` if your server is not on `http://localhost:8000/api`.\n3. Run **Auth → Login** first — it saves the Sanctum token into the `token` variable automatically, and every protected request picks it up from there.\n\n## Response envelope\n\nEvery endpoint returns the same shape:\n\n```json\n// success\n{ \"status\": true,  \"message\": \"...\", \"data\": ... }\n// error\n{ \"status\": false, \"message\": \"...\" }\n// validation (422)\n{ \"status\": false, \"message\": \"Validation error\", \"errors\": { \"field\": [\"...\"] } }\n```\n\n## Auth\n\nProtected routes use `Authorization: Bearer {{token}}` (Laravel Sanctum). Public routes need no header.\n\n## Note on updating a horse\n\nUpdate uses **POST**, not PUT — PHP does not parse `multipart/form-data` on PUT, and this endpoint accepts image uploads.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "horse_id",
+      "value": "12",
+      "type": "string",
+      "description": "Auto-filled by \"Create horse\". Default is a seeded horse so the read requests work standalone."
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Run **Login** first — it stores the Sanctum token in the {{token}} variable for every other request.",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Save the token so every protected request can use {{token}}.",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('login succeeded', () => pm.response.to.have.status(200));",
+                  "",
+                  "if (body.status && body.data && body.data.token) {",
+                  "  pm.collectionVariables.set('token', body.data.token);",
+                  "  console.log('Token saved to collection variable.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "admin@elbaraa-arabians.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "password",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "description": "Rate limited to 6 requests/minute.\n\n**200** → `data.token` + `data.user`\n**401** → invalid credentials\n**422** → missing/invalid email or password"
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "me"
+              ]
+            },
+            "description": "Returns the authenticated admin. **401** if the token is missing/revoked."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "List categories",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            },
+            "description": "Public, unpaginated (small fixed list). Each item has `id`, `slug`, and a bilingual `name: { en, ar }`.\n\nA horse can belong to several categories at once."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Site settings",
+      "description": "Key/value content shown on the public site (About text, contact details, socials).",
+      "item": [
+        {
+          "name": "Get settings",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            },
+            "description": "Public. Returns a flat object of all settings."
+          }
+        },
+        {
+          "name": "Update settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "about_en",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "about_ar",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "phone",
+                  "value": "+20 100 000 0000",
+                  "type": "text"
+                },
+                {
+                  "key": "whatsapp",
+                  "value": "201000000000",
+                  "type": "text",
+                  "description": "International format, digits only — no + or spaces"
+                },
+                {
+                  "key": "email",
+                  "value": "info@elbaraa-arabians.com",
+                  "type": "text"
+                },
+                {
+                  "key": "address_en",
+                  "value": "Egypt",
+                  "type": "text"
+                },
+                {
+                  "key": "address_ar",
+                  "value": "مصر",
+                  "type": "text"
+                },
+                {
+                  "key": "facebook",
+                  "value": "",
+                  "type": "text",
+                  "description": "Full URL or empty"
+                },
+                {
+                  "key": "instagram",
+                  "value": "",
+                  "type": "text",
+                  "description": "Full URL or empty"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            },
+            "description": "PUT is fine here — no file uploads. Only the keys you send are updated.\n\n**422** if `email`, `facebook`, or `instagram` is present but not a valid email/URL."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Horses — public",
+      "description": "No authentication required. Sold horses stay visible by design.",
+      "item": [
+        {
+          "name": "List horses",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/horses?per_page=12",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "horses"
+              ],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "12",
+                  "description": "Items per page (default 12)."
+                },
+                {
+                  "key": "category",
+                  "value": "sale",
+                  "description": "Filter by category slug: sale | mating | breeding",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "available",
+                  "description": "Filter by status: available | reserved | sold",
+                  "disabled": true
+                },
+                {
+                  "key": "featured",
+                  "value": "1",
+                  "description": "Only horses flagged for the home page.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Paginated. `data` contains the full Laravel paginator payload — the list itself is at `data.data`, and page info at `data.meta`."
+          }
+        },
+        {
+          "name": "Get one horse",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/horses/{{horse_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "horses",
+                "{{horse_id}}"
+              ]
+            },
+            "description": "**404** → `{ status: false, message: \"Resource not found\" }`\n\n`price` is `null` when the owner has not set one (the site shows \"price on request\").\n`video` is `null`, or `{ type: \"url\" | \"file\", url: \"...\" }`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Horses — admin",
+      "description": "All require `Authorization: Bearer {{token}}`.",
+      "item": [
+        {
+          "name": "Create horse",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.status && body.data && body.data.id) {",
+                  "  pm.collectionVariables.set('horse_id', body.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name_en",
+                  "value": "New Horse",
+                  "type": "text",
+                  "description": "required"
+                },
+                {
+                  "key": "name_ar",
+                  "value": "حصان جديد",
+                  "type": "text",
+                  "description": "required"
+                },
+                {
+                  "key": "gender",
+                  "value": "female",
+                  "type": "text",
+                  "description": "required — male | female"
+                },
+                {
+                  "key": "status",
+                  "value": "available",
+                  "type": "text",
+                  "description": "required — available | reserved | sold"
+                },
+                {
+                  "key": "breed_en",
+                  "value": "Straight Egyptian Arabian",
+                  "type": "text"
+                },
+                {
+                  "key": "breed_ar",
+                  "value": "عربي مصري أصيل",
+                  "type": "text"
+                },
+                {
+                  "key": "date_of_birth",
+                  "value": "2022-05-01",
+                  "type": "text",
+                  "description": "YYYY-MM-DD, not in the future"
+                },
+                {
+                  "key": "description_en",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "description_ar",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "price",
+                  "value": "",
+                  "type": "text",
+                  "description": "Leave empty for 'price on request'"
+                },
+                {
+                  "key": "currency",
+                  "value": "EGP",
+                  "type": "text",
+                  "description": "3-letter code"
+                },
+                {
+                  "key": "is_featured",
+                  "value": "0",
+                  "type": "text",
+                  "description": "1 = show on home page"
+                },
+                {
+                  "key": "categories[]",
+                  "value": "1",
+                  "type": "text",
+                  "description": "Category id — repeat this key for multiple"
+                },
+                {
+                  "key": "categories[]",
+                  "value": "3",
+                  "type": "text"
+                },
+                {
+                  "key": "video_url",
+                  "value": "",
+                  "type": "text",
+                  "description": "YouTube/Vimeo link — OR upload a file below, not both"
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true,
+                  "description": "mp4/mov/avi, max 50 MB"
+                },
+                {
+                  "key": "images[]",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true,
+                  "description": "jpg/png/webp, max 5 MB each — repeat for multiple"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/horses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "horses"
+              ]
+            },
+            "description": "**201** on success. Saves the new id into `{{horse_id}}` for the requests below.\n\n**422** if required fields are missing or a category id does not exist."
+          }
+        },
+        {
+          "name": "Update horse",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "price",
+                  "value": "185000",
+                  "type": "text"
+                },
+                {
+                  "key": "currency",
+                  "value": "EGP",
+                  "type": "text"
+                },
+                {
+                  "key": "status",
+                  "value": "reserved",
+                  "type": "text"
+                },
+                {
+                  "key": "categories[]",
+                  "value": "2",
+                  "type": "text",
+                  "description": "Replaces ALL categories (sync, not append)"
+                },
+                {
+                  "key": "removed_media_ids[]",
+                  "value": "",
+                  "type": "text",
+                  "disabled": true,
+                  "description": "Media ids to delete — repeat for multiple"
+                },
+                {
+                  "key": "images[]",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true,
+                  "description": "Appends new images"
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true,
+                  "description": "Replaces any existing uploaded video"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/horses/{{horse_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "horses",
+                "{{horse_id}}"
+              ]
+            },
+            "description": "**POST, not PUT** — PHP cannot parse multipart/form-data on PUT.\n\nOnly the fields you send are changed, except `categories[]` which replaces the whole set when present."
+          }
+        },
+        {
+          "name": "Delete one image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/horses/{{horse_id}}/images/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "horses",
+                "{{horse_id}}",
+                "images",
+                "1"
+              ],
+              "variable": [
+                {
+                  "key": "mediaId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "The last path segment is the **media id** (from `data.images[].id`), not the image index."
+          }
+        },
+        {
+          "name": "Delete video",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/horses/{{horse_id}}/video",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "horses",
+                "{{horse_id}}",
+                "video"
+              ]
+            },
+            "description": "Clears both the uploaded video file and the `video_url` column."
+          }
+        },
+        {
+          "name": "Delete horse",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/horses/{{horse_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "horses",
+                "{{horse_id}}"
+              ]
+            },
+            "description": "Cascades: the horse's images, video, and category links are all removed with it."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth — Logout (run last)",
+      "item": [
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            },
+            "description": "Revokes the current access token only (other devices stay logged in).\n\nDeliberately the **last** item in the collection: running it earlier would revoke the token that the admin requests above depend on."
+          }
+        }
+      ]
+    }
+  ]
+}

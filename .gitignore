@@ -1,0 +1,39 @@
+# Root ignore for the monorepo. back/.gitignore and front/.gitignore still apply
+# inside their own folders; this file covers the cross-cutting cases.
+
+# --- Secrets: never commit ---
+.env
+.env.*
+!.env.example
+
+# --- Dependencies (reinstall with composer install / npm install) ---
+/back/vendor/
+/front/node_modules/
+
+# --- Build output ---
+/front/dist/
+/front/.vite/
+
+# --- Laravel runtime ---
+# storage/app/public holds media uploaded at runtime, plus the seeder's copies of
+# the source photos. The originals live in front/public/images and ARE committed,
+# so this can always be rebuilt with `php artisan migrate:fresh --seed`.
+/back/storage/app/public/*
+!/back/storage/app/public/.gitignore
+/back/storage/framework/cache/*
+/back/storage/framework/sessions/*
+/back/storage/framework/views/*
+/back/storage/logs/*
+/back/bootstrap/cache/*
+
+# public/storage is a symlink created by `php artisan storage:link`, and it points
+# at an absolute path on whoever ran it — committing it breaks other machines.
+/back/public/storage
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json

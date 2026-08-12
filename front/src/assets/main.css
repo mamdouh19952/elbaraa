@@ -1,0 +1,218 @@
+@import 'tailwindcss';
+
+/* Tokens taken from the Petshop Figma template (file Uy5srseFiwP9tcdrZrWhNu):
+   Orange/500 #FD7E14, Gray/100 #F8F9FA, Black #000000, White #FFFFFF, with
+   Poppins for headings and Inter for body. The `gold-*` scale name is kept so
+   the whole codebase keeps working, but every stop now ramps to that orange.
+   Cairo stands in for Arabic, since Poppins/Inter have no Arabic coverage. */
+@theme {
+  --color-gold-50: #fff4ec;
+  --color-gold-100: #ffe4d1;
+  --color-gold-200: #fec7a4;
+  --color-gold-300: #fea56d;
+  --color-gold-400: #fd7e14;
+  --color-gold-500: #ef6c00;
+  --color-gold-600: #c85a00;
+  --color-gold-700: #a04800;
+  --color-gold-800: #7a3700;
+  --color-gold-900: #5c2900;
+
+  /* Neutral ramp from the template's Gray/100 down to its true black. */
+  --color-ink-50: #f8f9fa;
+  --color-ink-100: #eceef0;
+  --color-ink-200: #dee1e5;
+  --color-ink-300: #c2c7ce;
+  --color-ink-400: #969ca5;
+  --color-ink-500: #6c757d;
+  --color-ink-600: #4d545b;
+  --color-ink-700: #343a40;
+  --color-ink-800: #212529;
+  --color-ink-900: #121417;
+  --color-ink-950: #000000;
+
+  --color-cream: #ffffff;
+  --color-cream-deep: #f8f9fa;
+
+  --font-display: 'Poppins', 'Cairo', ui-sans-serif, system-ui, sans-serif;
+  --font-display-ar: 'Cairo', 'Poppins', sans-serif;
+  --font-sans: 'Inter', 'Cairo', ui-sans-serif, system-ui, sans-serif;
+  --font-sans-ar: 'Cairo', 'Inter', sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Bumps the whole rem-based type scale rather than editing every utility. */
+    font-size: 17.5px;
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 18px;
+    }
+  }
+
+  body {
+    @apply bg-cream font-sans text-ink-700 antialiased;
+  }
+
+  /* Arabic swaps to Cairo and needs more line-height than the Latin faces,
+     which are set for tighter Western leading. */
+  html[lang='ar'] body {
+    font-family: var(--font-sans-ar);
+    line-height: 1.95;
+  }
+
+  html[lang='ar'] h1,
+  html[lang='ar'] h2,
+  html[lang='ar'] h3,
+  html[lang='ar'] .font-display {
+    font-family: var(--font-display-ar);
+    font-weight: 700;
+  }
+
+  /* Poppins Bold with tight tracking, per the template's 54px hero heading. */
+  h1,
+  h2,
+  h3 {
+    @apply font-display font-bold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Buttons follow the template: solid black pill as the primary action, with
+     orange reserved for accents (active nav, icons, highlights).
+     Note: Tailwind v4's @apply only accepts real utilities, not other custom
+     classes, so the shared base is listed on all four rather than composed. */
+  .btn,
+  .btn-gold,
+  .btn-outline,
+  .btn-ghost-light {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-8 py-3.5 text-base font-semibold tracking-normal normal-case transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:outline-none;
+  }
+
+  .btn-gold {
+    @apply bg-ink-950 text-white shadow-sm hover:bg-gold-400 hover:text-ink-950 hover:shadow-lg hover:shadow-gold-400/40;
+  }
+
+  .btn-outline {
+    @apply border border-ink-300 text-ink-800 hover:border-gold-400 hover:bg-gold-400 hover:text-ink-950 hover:shadow-md hover:shadow-gold-400/25;
+  }
+
+  .btn-ghost-light {
+    @apply border border-white/60 text-white backdrop-blur-sm hover:border-gold-400 hover:bg-gold-400 hover:text-ink-950;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-sm font-medium text-ink-700;
+  }
+
+  .field-input {
+    @apply w-full rounded-lg border border-ink-200 bg-white px-4 py-2.5 text-ink-900 transition outline-none placeholder:text-ink-400 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20;
+  }
+
+  /* Panel used throughout the admin dashboard. */
+  .card {
+    @apply rounded-2xl border border-ink-100 bg-white shadow-sm;
+  }
+
+  /* Template's small orange label that sits above each section heading. */
+  .eyebrow {
+    @apply inline-block text-sm font-semibold tracking-wide text-gold-400 normal-case;
+  }
+
+  html[lang='ar'] .eyebrow {
+    @apply text-base font-bold;
+  }
+
+  /* Oversized accent numeral (e.g. the 404 figure). */
+  .figure-accent {
+    @apply font-display font-bold text-gold-400;
+  }
+
+  /* The template's rounded image card, shared by every large photo frame. */
+  .media-frame {
+    @apply rounded-3xl;
+  }
+}
+
+@layer utilities {
+  .fade-up {
+    animation: fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Scroll-reveal pair driven by the v-reveal directive (IntersectionObserver-based,
+     see src/directives/reveal.js) — no animation library dependency. */
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  [data-reveal-group] > * {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  [data-reveal-group].is-visible > * {
+    opacity: 1;
+    transform: none;
+  }
+
+  [data-reveal-group].is-visible > *:nth-child(1) {
+    transition-delay: 0ms;
+  }
+  [data-reveal-group].is-visible > *:nth-child(2) {
+    transition-delay: 90ms;
+  }
+  [data-reveal-group].is-visible > *:nth-child(3) {
+    transition-delay: 180ms;
+  }
+  [data-reveal-group].is-visible > *:nth-child(4) {
+    transition-delay: 270ms;
+  }
+  [data-reveal-group].is-visible > *:nth-child(5) {
+    transition-delay: 360ms;
+  }
+  [data-reveal-group].is-visible > *:nth-child(6) {
+    transition-delay: 450ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up {
+    animation: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  [data-reveal],
+  [data-reveal-group] > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
