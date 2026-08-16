@@ -1,6 +1,41 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.0.0 → 2.0.0
+
+This amendment broadens the product from bilingual (Arabic/English) to trilingual (Arabic/English/
+Chinese), replaces "Arabic always default on first visit" with browser-language auto-detection
+(falling back to Arabic when inconclusive), and adds a fallback/completeness-indicator contract for
+translatable content. Treated as MAJOR because it redefines what "constitution-compliant" means for
+existing behavior: an AR/EN-only, Arabic-always-default implementation was compliant under 1.0.0
+and is not under 2.0.0.
+
+Principles changed:
+  - VI. Bilingual & RTL/LTR Correctness → RENAMED "Trilingual & RTL/LTR Correctness"; broadened to
+    three languages; added the current-locale→English→Arabic public fallback requirement and the
+    admin-facing missing-translation-indicator requirement.
+
+Sections changed:
+  - Tech Stack Constraints → added `spatie/laravel-translatable` as an approved package exception,
+    with a note that `site_settings` deliberately stays a plain key-value table extended via `_zh`
+    suffixes rather than adopting the package.
+
+Cross-references updated:
+  - specs/001-horse-website-mvp/spec.md — FR-019/020/021 broadened to three languages plus
+    auto-detect; new FR-024 for the fallback/completeness-indicator contract; Key Entities and Out
+    of Scope updated to match.
+
+Templates reviewed:
+  ✅ .specify/templates/plan-template.md — no constitution-specific references requiring changes
+  ✅ .specify/templates/spec-template.md — no constitution-specific references requiring changes
+  ✅ .specify/templates/tasks-template.md — no constitution-specific references requiring changes
+
+Deferred TODOs: None.
+-->
+
+<!--
+PRIOR SYNC IMPACT REPORT (1.0.0 initial ratification for this project)
+==================
 Version change: 1.0.0 ("Medical Platform Constitution") → 1.0.0 (El Baraa Arabians — Horse
 Website Constitution)
 
@@ -117,19 +152,26 @@ speculative field or layer added now is something the owner has to work around l
 requirement differs. Feature tests at the HTTP layer validate real behavior without brittle
 mocking of internals.
 
-### VI. Bilingual & RTL/LTR Correctness
+### VI. Trilingual & RTL/LTR Correctness
 
-The product supports Arabic and English as first-class, equally-complete experiences — not
-English-with-translated-strings. Arabic responses/content MUST support right-to-left presentation
-correctly on the frontend; this is a frontend layout concern primarily, but the backend MUST NOT
-assume LTR-only text (e.g. no fixed-width truncation that breaks Arabic script, no locale
-hard-coded to `en`). Validation and error messages returned by the API SHOULD be translatable
-(`resources/lang/{ar,en}`) once that structure exists, rather than hard-coded English strings baked
-into controllers or Form Requests.
+The product supports Arabic, English, and Chinese as first-class, equally-complete experiences —
+not English-with-translated-strings. Arabic responses/content MUST support right-to-left
+presentation correctly on the frontend; English and Chinese both render left-to-right, so only
+Arabic requires RTL handling. This is a frontend layout concern primarily, but the backend MUST NOT
+assume LTR-only text (e.g. no fixed-width truncation that breaks Arabic or Chinese script, no
+locale hard-coded to `en`). Public-facing translatable content MUST fall back current locale →
+English → Arabic when a translation is missing for a given field, rather than rendering blank;
+admin-facing editors for translatable content MUST surface which of the three languages are missing
+per field rather than silently hiding the gap. Validation and error messages returned by the API
+SHOULD be translatable (`resources/lang/{ar,en}`) once that structure exists, rather than
+hard-coded English strings baked into controllers or Form Requests.
 
-**Rationale**: Arabic is the default language for this product's primary audience (root `CLAUDE.md`
-§8). A backend that silently assumes English-only text is a correctness bug for this project, not
-a nice-to-have.
+**Rationale**: Arabic remains the fallback language for this product's primary audience (root
+`CLAUDE.md` §8) when browser-language auto-detection is inconclusive. A backend that silently
+assumes English-only text is a correctness bug for this project, not a nice-to-have. The
+fallback/completeness-indicator behavior exists because Chinese translations are added
+incrementally by the owner — the product must degrade gracefully, not blankly, while a field is
+only partially translated.
 
 ## Tech Stack Constraints
 
@@ -142,6 +184,11 @@ a nice-to-have.
   active dual-track UI (see root `CLAUDE.md` §3) — whether to strip it is a `/plan`-phase decision.
 - **UI (Vue)**: Tailwind CSS, in `front/` — the only UI this backend serves data to
 - **Media**: `spatie/laravel-medialibrary`, wrapped by `MediaService` (Principle II)
+- **Translatable content**: `spatie/laravel-translatable` — approved 2026-08-13 as an explicit
+  exception to "no new packages without owner approval," used for `Horse` (`name`/`breed`/
+  `description`) and `Category` (`name`) JSON-translatable attributes (Principle VI). `site_settings`
+  remains a plain key-value table and is NOT migrated to this package — it is extended via `_zh` key
+  suffixes (`about_zh`, `address_zh`) following its existing `_en`/`_ar` convention.
 - **Auth**: Laravel Sanctum, Bearer token (not cookie-based SPA auth — see root `CLAUDE.md` §6)
 - **Build Tool**: Vite (already configured via `vite.config.js`)
 - **Testing**: PHPUnit ^11 — configured in `phpunit.xml`
@@ -182,4 +229,4 @@ Runtime development guidance is maintained in `CLAUDE.md` at the project root, `
 and `front/CLAUDE.md`. The functional specification is maintained in
 `specs/001-horse-website-mvp/spec.md`.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-11 | **Last Amended**: 2026-08-11
+**Version**: 2.0.0 | **Ratified**: 2026-08-11 | **Last Amended**: 2026-08-13

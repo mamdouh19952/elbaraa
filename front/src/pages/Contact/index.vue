@@ -3,15 +3,21 @@ import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@/stores/settings'
 import { useWhatsapp } from '@/composables/useWhatsapp'
+import { useLocalized } from '@/composables/useLocalized'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const settingsStore = useSettingsStore()
 const { generalLink } = useWhatsapp()
+const { pick } = useLocalized()
 
 const settings = computed(() => settingsStore.settings)
 const whatsappUrl = computed(() => generalLink())
 const address = computed(() =>
-  locale.value === 'ar' ? settings.value.address_ar : settings.value.address_en,
+  pick({
+    ar: settings.value.address_ar,
+    en: settings.value.address_en,
+    zh: settings.value.address_zh,
+  }),
 )
 
 onMounted(() => settingsStore.fetchSettings())

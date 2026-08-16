@@ -10,9 +10,9 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            ['slug' => 'sale', 'name_en' => 'For Sale', 'name_ar' => 'للبيع'],
-            ['slug' => 'mating', 'name_en' => 'Mating', 'name_ar' => 'للزواج'],
-            ['slug' => 'breeding', 'name_en' => 'Our Breeding', 'name_ar' => 'إنتاجنا'],
+            ['slug' => 'sale', 'name' => ['en' => 'For Sale', 'ar' => 'للبيع', 'zh' => '待售']],
+            ['slug' => 'mating', 'name' => ['en' => 'Mating', 'ar' => 'للزواج', 'zh' => '配种']],
+            ['slug' => 'breeding', 'name' => ['en' => 'Our Breeding', 'ar' => 'إنتاجنا', 'zh' => '我们的繁育']],
         ];
 
         foreach ($categories as $category) {

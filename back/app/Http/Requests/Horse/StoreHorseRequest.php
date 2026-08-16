@@ -9,14 +9,23 @@ class StoreHorseRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'name_en' => 'required|string|max:255',
-            'name_ar' => 'required|string|max:255',
-            'breed_en' => 'nullable|string|max:255',
-            'breed_ar' => 'nullable|string|max:255',
+            'name' => 'required|array',
+            'name.ar' => 'required|string|max:255',
+            'name.en' => 'required|string|max:255',
+            'name.zh' => 'nullable|string|max:255',
+
+            'breed' => 'nullable|array',
+            'breed.ar' => 'nullable|string|max:255',
+            'breed.en' => 'nullable|string|max:255',
+            'breed.zh' => 'nullable|string|max:255',
+
             'gender' => 'required|in:male,female',
             'date_of_birth' => 'nullable|date|before_or_equal:today',
-            'description_en' => 'nullable|string',
-            'description_ar' => 'nullable|string',
+
+            'description' => 'nullable|array',
+            'description.ar' => 'nullable|string',
+            'description.en' => 'nullable|string',
+            'description.zh' => 'nullable|string',
             'price' => 'nullable|numeric|min:0',
             'currency' => 'nullable|string|size:3',
             'status' => 'required|in:available,reserved,sold',

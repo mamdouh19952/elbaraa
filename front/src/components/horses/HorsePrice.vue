@@ -9,12 +9,14 @@ const props = defineProps({
 
 const { t, locale } = useI18n()
 
+const INTL_LOCALES = { ar: 'ar-EG', en: 'en-US', zh: 'zh-CN' }
+
 const hasPrice = computed(() => props.price !== null && props.price !== undefined)
 
 const formatted = computed(() => {
   if (!hasPrice.value) return null
 
-  return new Intl.NumberFormat(locale.value === 'ar' ? 'ar-EG' : 'en-US', {
+  return new Intl.NumberFormat(INTL_LOCALES[locale.value] || 'en-US', {
     style: 'currency',
     currency: props.currency || 'USD',
     maximumFractionDigits: 0,

@@ -10,14 +10,11 @@ return new class extends Migration
     {
         Schema::create('horses', function (Blueprint $table) {
             $table->id();
-            $table->string('name_en');
-            $table->string('name_ar');
-            $table->string('breed_en')->nullable();
-            $table->string('breed_ar')->nullable();
+            $table->json('name');
+            $table->json('breed')->nullable();
             $table->enum('gender', ['male', 'female']);
             $table->date('date_of_birth')->nullable();
-            $table->text('description_en')->nullable();
-            $table->text('description_ar')->nullable();
+            $table->json('description')->nullable();
             $table->decimal('price', 12, 2)->nullable();
             $table->string('currency', 3)->default('USD');
             $table->enum('status', ['available', 'reserved', 'sold'])->default('available');

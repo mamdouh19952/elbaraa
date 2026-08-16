@@ -1,9 +1,9 @@
 import { useI18n } from 'vue-i18n'
 
 /**
- * API resources expose bilingual fields as { en, ar }. This picks the active
- * language and falls back to the other one so a half-translated record still
- * renders something instead of a blank.
+ * API resources expose translatable fields as { ar, en, zh }. This picks the
+ * active language and falls back current locale → English → Arabic, so a
+ * partially-translated record still renders something instead of a blank.
  */
 export function useLocalized() {
   const { locale } = useI18n()

@@ -2,13 +2,18 @@
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@/stores/settings'
+import { useLocalized } from '@/composables/useLocalized'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const settingsStore = useSettingsStore()
+const { pick } = useLocalized()
 
 const paragraphs = computed(() => {
-  const value =
-    locale.value === 'ar' ? settingsStore.settings.about_ar : settingsStore.settings.about_en
+  const value = pick({
+    ar: settingsStore.settings.about_ar,
+    en: settingsStore.settings.about_en,
+    zh: settingsStore.settings.about_zh,
+  })
 
   return (value || '').split('\n').filter((line) => line.trim())
 })

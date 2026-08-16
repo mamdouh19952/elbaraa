@@ -41,7 +41,8 @@ class HorseSeeder extends Seeder
             $slugs = $data['categories'];
             unset($data['images'], $data['categories']);
 
-            $horse = Horse::updateOrCreate(['name_en' => $data['name_en']], $data);
+            $horse = Horse::where('name->en', $data['name']['en'])->first();
+            $horse ? $horse->update($data) : $horse = Horse::create($data);
 
             $horse->categories()->sync(
                 collect($slugs)->map(fn (string $slug) => $categories[$slug])->all()
@@ -72,16 +73,19 @@ class HorseSeeder extends Seeder
      */
     private function horses(): array
     {
+        // Chinese copy below is placeholder/machine-assisted translation — flagged
+        // for native-speaker review before launch, same caveat as the other seeders.
         return [
             [
-                'name_en' => 'Samraa El Baraa',
-                'name_ar' => 'سمراء البراء',
-                'breed_en' => 'Straight Egyptian Arabian',
-                'breed_ar' => 'عربي مصري أصيل',
+                'name' => ['en' => 'Samraa El Baraa', 'ar' => 'سمراء البراء', 'zh' => '萨姆拉·巴拉'],
+                'breed' => ['en' => 'Straight Egyptian Arabian', 'ar' => 'عربي مصري أصيل', 'zh' => '纯血埃及阿拉伯马'],
                 'gender' => 'female',
                 'date_of_birth' => '2021-03-14',
-                'description_en' => 'A striking black Straight Egyptian mare with exceptional presence and movement. Refined head, long arched neck, and a floating trot that turns heads in the show ring.',
-                'description_ar' => 'فرس سوداء من السلالة المصرية الأصيلة، ذات حضور استثنائي وحركة مميزة. رأس مصفّى ورقبة طويلة مقوسة، وخطوة تلفت الأنظار في الحلبة.',
+                'description' => [
+                    'en' => 'A striking black Straight Egyptian mare with exceptional presence and movement. Refined head, long arched neck, and a floating trot that turns heads in the show ring.',
+                    'ar' => 'فرس سوداء من السلالة المصرية الأصيلة، ذات حضور استثنائي وحركة مميزة. رأس مصفّى ورقبة طويلة مقوسة، وخطوة تلفت الأنظار في الحلبة.',
+                    'zh' => '一匹引人注目的黑色纯血埃及阿拉伯母马，气质出众，步态优雅。头形精致，颈项修长弯曲，飘逸的小跑步态在赛场上格外夺目。',
+                ],
                 'price' => 185000,
                 'currency' => 'EGP',
                 'status' => 'available',
@@ -90,14 +94,15 @@ class HorseSeeder extends Seeder
                 'images' => ['612612968_33687602540831053_7359887036261105813_n.jpg'],
             ],
             [
-                'name_en' => 'Sultana',
-                'name_ar' => 'سلطانة',
-                'breed_en' => 'Straight Egyptian Arabian',
-                'breed_ar' => 'عربي مصري أصيل',
+                'name' => ['en' => 'Sultana', 'ar' => 'سلطانة', 'zh' => '苏丹娜'],
+                'breed' => ['en' => 'Straight Egyptian Arabian', 'ar' => 'عربي مصري أصيل', 'zh' => '纯血埃及阿拉伯马'],
                 'gender' => 'female',
                 'date_of_birth' => '2022-04-09',
-                'description_en' => 'Jet-black mare with a bright star, a deep jowl and large dark eyes. Elegant throughout, with the dry, chiselled head the Egyptian lines are known for.',
-                'description_ar' => 'فرس سوداء ناصعة بغرة بيضاء، فك عميق وعيون كبيرة داكنة. أنيقة التكوين برأس جاف ومنحوت يميّز الخطوط المصرية.',
+                'description' => [
+                    'en' => 'Jet-black mare with a bright star, a deep jowl and large dark eyes. Elegant throughout, with the dry, chiselled head the Egyptian lines are known for.',
+                    'ar' => 'فرس سوداء ناصعة بغرة بيضاء، فك عميق وعيون كبيرة داكنة. أنيقة التكوين برأس جاف ومنحوت يميّز الخطوط المصرية.',
+                    'zh' => '乌黑色母马，额部有醒目白星，下颌深厚，眼睛乌黑而大。体态优雅，头部干燥精雕，正是埃及血统的典型特征。',
+                ],
                 'price' => null,
                 'status' => 'available',
                 'is_featured' => true,
@@ -105,14 +110,15 @@ class HorseSeeder extends Seeder
                 'images' => ['730584842_1435134921754242_5231241533222015163_n.jpeg'],
             ],
             [
-                'name_en' => 'Nasser El Baraa',
-                'name_ar' => 'ناصر البراء',
-                'breed_en' => 'Straight Egyptian Arabian',
-                'breed_ar' => 'عربي مصري أصيل',
+                'name' => ['en' => 'Nasser El Baraa', 'ar' => 'ناصر البراء', 'zh' => '纳赛尔·巴拉'],
+                'breed' => ['en' => 'Straight Egyptian Arabian', 'ar' => 'عربي مصري أصيل', 'zh' => '纯血埃及阿拉伯马'],
                 'gender' => 'male',
                 'date_of_birth' => '2020-05-02',
-                'description_en' => 'Grey stallion of classic Egyptian type — deep jowl, large dark eyes and a proud carriage. A consistent sire of correct, typey foals.',
-                'description_ar' => 'حصان أشهب من النوع المصري الكلاسيكي — فك عميق وعيون كبيرة داكنة وقوام مرفوع. ينتج مهوراً صحيحة التكوين ومميزة الشكل.',
+                'description' => [
+                    'en' => 'Grey stallion of classic Egyptian type — deep jowl, large dark eyes and a proud carriage. A consistent sire of correct, typey foals.',
+                    'ar' => 'حصان أشهب من النوع المصري الكلاسيكي — فك عميق وعيون كبيرة داكنة وقوام مرفوع. ينتج مهوراً صحيحة التكوين ومميزة الشكل.',
+                    'zh' => '经典埃及血统的灰色种马——下颌深厚，眼睛乌黑而大，姿态昂扬。稳定地繁育出体形正确、类型典型的幼驹。',
+                ],
                 'price' => null,
                 'status' => 'available',
                 'is_featured' => true,
@@ -120,14 +126,15 @@ class HorseSeeder extends Seeder
                 'images' => ['616565689_33814184764839496_5653523334166532694_n.jpg'],
             ],
             [
-                'name_en' => 'Zain',
-                'name_ar' => 'زين',
-                'breed_en' => 'Straight Egyptian Arabian',
-                'breed_ar' => 'عربي مصري أصيل',
+                'name' => ['en' => 'Zain', 'ar' => 'زين', 'zh' => '赞恩'],
+                'breed' => ['en' => 'Straight Egyptian Arabian', 'ar' => 'عربي مصري أصيل', 'zh' => '纯血埃及阿拉伯马'],
                 'gender' => 'male',
                 'date_of_birth' => '2022-01-20',
-                'description_en' => 'Bay stallion with strong bone, a powerful shoulder and effortless self-carriage. Bold, willing temperament under handling.',
-                'description_ar' => 'حصان كميت قوي البنية، كتف قوي وحمل ذاتي متزن. طبع جريء ومتعاون في التعامل.',
+                'description' => [
+                    'en' => 'Bay stallion with strong bone, a powerful shoulder and effortless self-carriage. Bold, willing temperament under handling.',
+                    'ar' => 'حصان كميت قوي البنية، كتف قوي وحمل ذاتي متزن. طبع جريء ومتعاون في التعامل.',
+                    'zh' => '骨骼强健的栗色种马，肩部有力，自我姿态从容不迫。性情大胆，配合度高。',
+                ],
                 'price' => 250000,
                 'currency' => 'EGP',
                 'status' => 'available',
@@ -136,14 +143,15 @@ class HorseSeeder extends Seeder
                 'images' => ['612230213_33739970855594221_2160425073495852291_n.jpg'],
             ],
             [
-                'name_en' => 'D Anya El Baraa',
-                'name_ar' => 'دي أنيا البراء',
-                'breed_en' => 'Straight Egyptian Arabian',
-                'breed_ar' => 'عربي مصري أصيل',
+                'name' => ['en' => 'D Anya El Baraa', 'ar' => 'دي أنيا البراء', 'zh' => '迪安雅·巴拉'],
+                'breed' => ['en' => 'Straight Egyptian Arabian', 'ar' => 'عربي مصري أصيل', 'zh' => '纯血埃及阿拉伯马'],
                 'gender' => 'female',
                 'date_of_birth' => '2023-06-18',
-                'description_en' => 'Young bay filly of the stable\'s own breeding, showing balance and a light, athletic way of moving. One to watch as she matures.',
-                'description_ar' => 'مهرة كميت صغيرة من إنتاج المربط، تُظهر اتزاناً وحركة خفيفة رياضية. من الخيول الواعدة مع اكتمال نموها.',
+                'description' => [
+                    'en' => 'Young bay filly of the stable\'s own breeding, showing balance and a light, athletic way of moving. One to watch as she matures.',
+                    'ar' => 'مهرة كميت صغيرة من إنتاج المربط، تُظهر اتزاناً وحركة خفيفة رياضية. من الخيول الواعدة مع اكتمال نموها.',
+                    'zh' => '马场自繁的年幼栗色小母马，体态均衡，步伐轻盈矫健。随着成长值得持续关注。',
+                ],
                 'price' => null,
                 'status' => 'available',
                 'is_featured' => true,
@@ -153,14 +161,19 @@ class HorseSeeder extends Seeder
             [
                 // Two photos of the same chestnut mare, but her name is not in either
                 // watermark — descriptive placeholder for the owner to rename.
-                'name_en' => 'Chestnut Mare',
-                'name_ar' => 'الفرس الكستنائية',
-                'breed_en' => 'Straight Egyptian Arabian',
-                'breed_ar' => 'عربي مصري أصيل',
+                //
+                // breed/description.zh deliberately left unset: this is the one horse
+                // whose translations are genuinely incomplete, so it doubles as the
+                // built-in demo for the fallback chain (public zh view falls back to
+                // English) and the admin completeness indicator (shows zh as missing).
+                'name' => ['en' => 'Chestnut Mare', 'ar' => 'الفرس الكستنائية', 'zh' => '栗色母马'],
+                'breed' => ['en' => 'Straight Egyptian Arabian', 'ar' => 'عربي مصري أصيل'],
                 'gender' => 'female',
                 'date_of_birth' => '2021-09-08',
-                'description_en' => 'Elegant chestnut mare with a flaxen mane and tail, clean throatlatch and a smooth topline.',
-                'description_ar' => 'فرس كستنائية أنيقة بعرف وذيل فاتحين، رقبة نظيفة وخط ظهر انسيابي.',
+                'description' => [
+                    'en' => 'Elegant chestnut mare with a flaxen mane and tail, clean throatlatch and a smooth topline.',
+                    'ar' => 'فرس كستنائية أنيقة بعرف وذيل فاتحين، رقبة نظيفة وخط ظهر انسيابي.',
+                ],
                 'price' => null,
                 'status' => 'reserved',
                 'is_featured' => false,

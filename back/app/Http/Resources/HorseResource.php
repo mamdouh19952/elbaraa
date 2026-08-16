@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Concerns\NormalizesTranslations;
 use App\Models\Horse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -9,24 +10,17 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class HorseResource extends JsonResource
 {
+    use NormalizesTranslations;
+
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
-            'name' => [
-                'en' => $this->name_en,
-                'ar' => $this->name_ar,
-            ],
-            'breed' => [
-                'en' => $this->breed_en,
-                'ar' => $this->breed_ar,
-            ],
+            'name' => $this->translations('name'),
+            'breed' => $this->translations('breed'),
             'gender' => $this->gender,
             'date_of_birth' => $this->date_of_birth?->toDateString(),
-            'description' => [
-                'en' => $this->description_en,
-                'ar' => $this->description_ar,
-            ],
+            'description' => $this->translations('description'),
             'price' => $this->price !== null ? (float) $this->price : null,
             'currency' => $this->currency,
             'status' => $this->status,

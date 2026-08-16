@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useHorsesStore } from '@/stores/horses'
 import { useSettingsStore } from '@/stores/settings'
@@ -29,10 +29,12 @@ const breed = computed(() => (horse.value ? pick(horse.value.breed) : ''))
 const description = computed(() => (horse.value ? pick(horse.value.description) : ''))
 const whatsappUrl = computed(() => (name.value ? horseLink(name.value) : null))
 
+const INTL_LOCALES = { ar: 'ar-EG', en: 'en-GB', zh: 'zh-CN' }
+
 const formattedDob = computed(() => {
   if (!horse.value?.date_of_birth) return null
 
-  return new Intl.DateTimeFormat(locale.value === 'ar' ? 'ar-EG' : 'en-GB', {
+  return new Intl.DateTimeFormat(INTL_LOCALES[locale.value] || 'en-GB', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -54,18 +56,42 @@ const age = computed(() => {
   return years >= 1 ? `${years} ${t('horse.years')}` : `${months} ${t('horse.months')}`
 })
 
-// YouTube/Vimeo links need an embed URL; anything else renders as a plain link.
-const embedUrl = computed(() => {
+const youtubeId = computed(() => {
   const video = horse.value?.video
   if (!video || video.type !== 'url') return null
 
-  const youtube = video.url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/)
-  if (youtube) return `https://www.youtube.com/embed/${youtube[1]}`
+  const match = video.url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/)
+  return match ? match[1] : null
+})
 
-  const vimeo = video.url.match(/vimeo\.com\/(\d+)/)
-  if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}`
+const vimeoId = computed(() => {
+  const video = horse.value?.video
+  if (!video || video.type !== 'url') return null
+
+  const match = video.url.match(/vimeo\.com\/(\d+)/)
+  return match ? match[1] : null
+})
+
+// YouTube/Vimeo links need an embed URL; anything else renders as a plain link.
+// autoplay=1 is safe here — the iframe is only mounted once the user clicks play (see videoActive).
+const embedUrl = computed(() => {
+  if (youtubeId.value) return `https://www.youtube.com/embed/${youtubeId.value}?autoplay=1`
+  if (vimeoId.value) return `https://player.vimeo.com/video/${vimeoId.value}?autoplay=1`
 
   return null
+})
+
+// The real YouTube thumbnail can be built without an API call; Vimeo has no such
+// direct URL, so it falls back to a plain play button on the dark background.
+const thumbnailUrl = computed(() =>
+  youtubeId.value ? `https://img.youtube.com/vi/${youtubeId.value}/hqdefault.jpg` : null,
+)
+
+// The embed iframe paints a black frame for a moment before the player is ready;
+// showing a thumbnail facade until the user clicks play avoids that flash entirely.
+const videoActive = ref(false)
+watch(embedUrl, () => {
+  videoActive.value = false
 })
 
 onMounted(async () => {
@@ -110,7 +136,7 @@ onMounted(async () => {
               v-if="activeImage"
               :src="activeImage"
               :alt="name"
-              class="h-full w-full object-cover"
+              class="h-full w-full object-contain"
             />
           </div>
 
@@ -131,7 +157,7 @@ onMounted(async () => {
                 :src="image.thumb"
                 :alt="name"
                 loading="lazy"
-                class="h-full w-full object-cover"
+                class="h-full w-full object-contain"
               />
             </button>
           </div>
@@ -201,22 +227,45 @@ onMounted(async () => {
       <section v-if="horse.video" class="mt-20">
         <p class="eyebrow">{{ t('horse.video') }}</p>
 
-        <div class="mt-6 overflow-hidden rounded-2xl bg-ink-950">
-          <iframe
-            v-if="embedUrl"
-            :src="embedUrl"
-            class="aspect-video w-full"
-            :title="`${name} — ${t('horse.video')}`"
-            allow="
-              accelerometer;
-              autoplay;
-              clipboard-write;
-              encrypted-media;
-              gyroscope;
-              picture-in-picture;
-            "
-            allowfullscreen
-          />
+        <div class="relative mt-6 overflow-hidden rounded-2xl bg-ink-950">
+          <template v-if="embedUrl">
+            <iframe
+              v-if="videoActive"
+              :src="embedUrl"
+              class="aspect-video w-full"
+              :title="`${name} — ${t('horse.video')}`"
+              allow="
+                accelerometer;
+                autoplay;
+                clipboard-write;
+                encrypted-media;
+                gyroscope;
+                picture-in-picture;
+              "
+              allowfullscreen
+            />
+            <button
+              v-else
+              type="button"
+              class="group relative flex aspect-video w-full items-center justify-center"
+              :aria-label="`${name} — ${t('horse.video')}`"
+              @click="videoActive = true"
+            >
+              <img
+                v-if="thumbnailUrl"
+                :src="thumbnailUrl"
+                alt=""
+                class="absolute inset-0 h-full w-full object-cover opacity-80 transition group-hover:opacity-60"
+              />
+              <span
+                class="relative flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-gold-700 shadow-lg transition group-hover:scale-105"
+              >
+                <svg class="h-6 w-6 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </span>
+            </button>
+          </template>
           <video
             v-else-if="horse.video.type === 'file'"
             :src="horse.video.url"

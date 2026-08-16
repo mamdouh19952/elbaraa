@@ -2,19 +2,24 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@/stores/settings'
+import { useLocalized } from '@/composables/useLocalized'
 import api from '@/services/api'
 import HorseCard from '@/components/horses/HorseCard.vue'
 import AppSpinner from '@/components/shared/AppSpinner.vue'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const settingsStore = useSettingsStore()
+const { pick } = useLocalized()
 
 const featured = ref([])
 const loading = ref(true)
 
 const aboutText = computed(() => {
-  const value =
-    locale.value === 'ar' ? settingsStore.settings.about_ar : settingsStore.settings.about_en
+  const value = pick({
+    ar: settingsStore.settings.about_ar,
+    en: settingsStore.settings.about_en,
+    zh: settingsStore.settings.about_zh,
+  })
 
   return (value || '').split('\n').filter(Boolean)[0] || ''
 })

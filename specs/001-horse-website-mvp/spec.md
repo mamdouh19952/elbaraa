@@ -4,6 +4,10 @@
 
 **Created**: 2026-08-11
 
+**Last Updated**: 2026-08-13 — extended to trilingual (Arabic/English/Chinese) content and UI, with
+browser-language auto-detection replacing the always-Arabic-default (was Arabic/English only,
+Arabic always default on first visit).
+
 **Status**: Draft
 
 **Input**: User description: "A website for a single horse owner/breeder (El Baraa Arabians /
@@ -21,7 +25,7 @@ up to date himself without developer involvement.
 
 **Target audience**:
 - **Public visitors** — prospective buyers, breeders, and people interested in Arabian horses,
-  primarily Arabic-speaking with English-speaking visitors also expected.
+  primarily Arabic-speaking, with English-speaking and Chinese-speaking visitors also expected.
 - **The owner** (single admin) — manages all content through the dashboard; not technical.
 
 **Platforms**: One Vue 3 SPA containing both the public website and an authentication-gated admin
@@ -79,30 +83,33 @@ demoable before any admin tooling exists.
 
 ---
 
-### User Story 2 - Switch between Arabic and English (Priority: P1)
+### User Story 2 - Switch between Arabic, English, and Chinese (Priority: P1)
 
 A visitor switches the site language at any point and the entire layout — text, direction,
 navigation, alignment — adapts correctly, not just the words.
 
-**Why this priority**: The owner's audience is bilingual, and a premium brand cannot ship a
+**Why this priority**: The owner's audience is multilingual, and a premium brand cannot ship a
 half-translated or direction-broken experience — this is as core to the product as the horse data
 itself.
 
-**Independent Test**: Load any page (default Arabic), switch to English via the language switcher,
-and confirm both text and layout direction flip correctly. Testable independently of any specific
-horse content.
+**Independent Test**: Load the site with no stored language preference (auto-detected, defaulting
+to Arabic if detection is inconclusive), switch to each of the other two languages via the language
+switcher, and confirm both text and layout direction flip correctly. Testable independently of any
+specific horse content.
 
 **Acceptance Scenarios**:
 
-1. **Given** a visitor opens the site for the first time, **When** the page loads, **Then** it is
-   shown in Arabic with right-to-left layout (navigation, alignment, mirrored icons where
-   directional).
-2. **Given** a visitor is viewing any page, **When** they use the language switcher to select
-   English, **Then** all visible text switches to English and the layout switches to left-to-right.
+1. **Given** a visitor opens the site for the first time (no stored language preference), **When**
+   the page loads, **Then** the system auto-detects their browser/OS language and shows Arabic,
+   English, or Chinese accordingly — right-to-left layout for Arabic, left-to-right for English or
+   Chinese — defaulting to Arabic if the detected language is not one of the three.
+2. **Given** a visitor is viewing any page, **When** they use the language switcher to select a
+   different language, **Then** all visible text switches to that language and the layout direction
+   updates accordingly (right-to-left for Arabic, left-to-right for English or Chinese).
 3. **Given** a visitor has switched language, **When** they navigate to another page or reload,
    **Then** their chosen language persists for the rest of the visit.
 4. **Given** the admin dashboard, **When** an authenticated admin views it, **Then** the same
-   language/direction rules apply there too — bilingual support is not public-site-only.
+   language/direction rules apply there too — multilingual support is not public-site-only.
 
 ---
 
@@ -185,10 +192,13 @@ content in the current language, independent of horse data.
   about similar available horses).
 - A horse's optional video is an external link that later becomes private/removed: the page must
   not break — it simply fails to play; no special handling beyond not crashing.
-- Very long description text, or long horse/breed names, in either language must not break the
-  layout (card truncation, detail-page wrapping).
+- Very long description text, or long horse/breed names, in any of the three languages must not
+  break the layout (card truncation, detail-page wrapping).
 - Two visitors browsing concurrently in different languages: language choice is per-visitor
   (local to their device/session), never global/shared state.
+- A translatable field has no Chinese translation entered: the public site shows the English value
+  instead (or Arabic, if English is also missing) rather than a blank field; the admin dashboard
+  marks that field's Chinese translation as missing so the gap is visible and easy to fill in later.
 - An admin removes a category that one or more horses currently use: those horses simply lose that
   category tag; they keep any other categories they have.
 - A horse belongs to zero categories (e.g. accidentally unchecked): it's a valid but likely-mistake
@@ -245,13 +255,24 @@ content in the current language, independent of horse data.
 - **FR-018**: The admin MUST be able to edit basic site content required by the public pages (About
   Us text; Contact details including a WhatsApp number).
 
-**Bilingual / RTL-LTR**
+**Multilingual / RTL-LTR**
 
-- **FR-019**: System MUST present all visitor- and admin-facing content in both Arabic and English,
-  with a control to switch language at any time.
+- **FR-019**: System MUST present all visitor- and admin-facing content — both static UI text and
+  database-sourced content (e.g. horse name/breed/description, category names, site content) — in
+  Arabic, English, and Chinese (中文), with a control to switch language at any time.
 - **FR-020**: Arabic MUST render right-to-left (mirrored layout, navigation, and alignment — not
-  translated text inside an unchanged left-to-right layout); English MUST render left-to-right.
-- **FR-021**: Arabic MUST be the language shown on first visit by default.
+  translated text inside an unchanged left-to-right layout); English and Chinese MUST render
+  left-to-right.
+- **FR-021**: On first visit (no stored language preference), the system MUST auto-detect the
+  visitor's browser/OS language and select Arabic, English, or Chinese accordingly; if the detected
+  language is not one of these three, the system MUST default to Arabic. Once a visitor has selected
+  or been assigned a language, it MUST persist for the rest of the visit (see FR-019 persistence
+  behavior).
+- **FR-024**: For database-sourced translatable content, Arabic and English MUST be provided by the
+  admin; Chinese MAY be left untranslated. When a translation is missing for the visitor's current
+  language, the public site MUST fall back current-locale → English → Arabic rather than showing a
+  blank field. The admin dashboard MUST indicate, per translatable field, which of the three
+  languages have been filled in.
 
 **Architecture contract**
 
@@ -264,16 +285,23 @@ content in the current language, independent of horse data.
 
 - **Horse**: name, breed, gender, date of birth, description, price (nullable), status
   (Available/Reserved/Sold — see Assumptions), one or more categories, one or more images, an
-  optional video (link or uploaded file).
+  optional video (link or uploaded file). `name`, `breed`, and `description` are each stored
+  per-language (Arabic, English, Chinese); Arabic and English are required, Chinese is optional,
+  with public display falling back current-locale → English → Arabic when a translation is missing
+  (see FR-024).
 - **Category**: a label a horse can carry (Sale, Mating, Breeding to start); many-to-many with
-  Horse; the set is extensible without restructuring Horse data.
+  Horse; the set is extensible without restructuring Horse data. `name` is per-language (Arabic,
+  English, Chinese) with the same fallback behavior as Horse fields.
 - **Horse Image**: one of a horse's photos; a horse has one or more.
 - **Horse Video** *(optional, at most one per horse in this MVP)*: either an external link or an
   uploaded file reference.
 - **Admin (Owner)**: the single account that can authenticate to manage all of the above; no
   multi-admin or role system in this MVP.
 - **Site Content**: the small set of editable text/settings the public pages need beyond horse data
-  — About Us bio, and Contact details (phone/WhatsApp/email/social/address as applicable).
+  — About Us bio, and Contact details (phone/WhatsApp/email/social/address as applicable). The About
+  bio and address are per-language (Arabic, English, Chinese) with the same fallback behavior as
+  Horse fields; the remaining contact fields (phone, WhatsApp, email, social links) are
+  language-independent.
 
 ## Success Criteria *(mandatory)*
 
@@ -281,8 +309,9 @@ content in the current language, independent of horse data.
 
 - **SC-001**: A visitor can find and open any given horse's detail page within 3 clicks/taps from
   the Home page.
-- **SC-002**: A visitor can switch between Arabic and English from any page, and the layout
-  direction updates correctly with no overlapping or broken UI, in under 1 second perceived delay.
+- **SC-002**: A visitor can switch between Arabic, English, and Chinese from any page, and the
+  layout direction updates correctly with no overlapping or broken UI, in under 1 second perceived
+  delay.
 - **SC-003**: A horse listed without a price still shows a clear, non-blank pricing indicator on
   both its listing card and its detail page — 100% of the time, never blank or "0".
 - **SC-004**: A visitor interested in a specific horse can start a WhatsApp conversation referencing
@@ -290,7 +319,7 @@ content in the current language, independent of horse data.
 - **SC-005**: The admin can publish a new horse (core fields, at least one image, at least one
   category) in under 5 minutes without developer help.
 - **SC-006**: The public site is fully usable on a mobile phone screen — no horizontal scrolling,
-  no overlapping elements — in both languages.
+  no overlapping elements — in all three languages.
 - **SC-007**: Adding a new horse category in the future requires no changes to existing horses'
   data or manual data migration.
 
@@ -336,6 +365,6 @@ model and architecture should not block adding these later, but none are built n
 - Online payments, deposits, or any money movement through the site.
 - Favorites/wishlist, saved searches, or visitor accounts.
 - Blog/news, testimonials, or a public inquiry/lead-management system beyond WhatsApp contact.
-- Multi-language content beyond Arabic/English.
+- Multi-language content beyond Arabic/English/Chinese.
 - Search-engine metadata strategy, analytics, and marketing integrations (may be addressed in
   `/plan` as non-functional concerns, not user-facing requirements here).

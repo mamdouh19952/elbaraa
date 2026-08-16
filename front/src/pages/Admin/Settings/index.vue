@@ -12,11 +12,13 @@ const settingsStore = useSettingsStore()
 const form = ref({
   about_en: '',
   about_ar: '',
+  about_zh: '',
   phone: '',
   whatsapp: '',
   email: '',
   address_en: '',
   address_ar: '',
+  address_zh: '',
   facebook: '',
   instagram: '',
 })
@@ -55,14 +57,18 @@ onMounted(async () => {
     <AppSpinner v-if="loading" />
 
     <form v-else class="mt-6 space-y-6" @submit.prevent="handleSubmit">
-      <div class="card grid gap-4 p-5 sm:grid-cols-2">
+      <div class="card grid gap-4 p-5 sm:grid-cols-3">
+        <div>
+          <label for="about_ar" class="field-label">{{ t('admin.aboutAr') }}</label>
+          <textarea id="about_ar" v-model="form.about_ar" rows="8" dir="rtl" class="field-input" />
+        </div>
         <div>
           <label for="about_en" class="field-label">{{ t('admin.aboutEn') }}</label>
           <textarea id="about_en" v-model="form.about_en" rows="8" dir="ltr" class="field-input" />
         </div>
         <div>
-          <label for="about_ar" class="field-label">{{ t('admin.aboutAr') }}</label>
-          <textarea id="about_ar" v-model="form.about_ar" rows="8" dir="rtl" class="field-input" />
+          <label for="about_zh" class="field-label">{{ t('admin.aboutZh') }}</label>
+          <textarea id="about_zh" v-model="form.about_zh" rows="8" dir="ltr" class="field-input" />
         </div>
       </div>
 
@@ -87,6 +93,16 @@ onMounted(async () => {
         <div />
 
         <div>
+          <label for="address_ar" class="field-label">{{ t('admin.addressAr') }}</label>
+          <input
+            id="address_ar"
+            v-model="form.address_ar"
+            type="text"
+            dir="rtl"
+            class="field-input"
+          />
+        </div>
+        <div>
           <label for="address_en" class="field-label">{{ t('admin.addressEn') }}</label>
           <input
             id="address_en"
@@ -97,12 +113,12 @@ onMounted(async () => {
           />
         </div>
         <div>
-          <label for="address_ar" class="field-label">{{ t('admin.addressAr') }}</label>
+          <label for="address_zh" class="field-label">{{ t('admin.addressZh') }}</label>
           <input
-            id="address_ar"
-            v-model="form.address_ar"
+            id="address_zh"
+            v-model="form.address_zh"
             type="text"
-            dir="rtl"
+            dir="ltr"
             class="field-input"
           />
         </div>

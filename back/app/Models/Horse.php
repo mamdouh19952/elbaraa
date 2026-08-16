@@ -9,25 +9,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Spatie\Translatable\HasTranslations;
 
 class Horse extends Model implements HasMedia
 {
     use HasFactory;
+    use HasTranslations;
     use InteractsWithMedia;
 
     public const GALLERY_COLLECTION = 'horse_gallery';
 
     public const VIDEO_COLLECTION = 'horse_video';
 
+    public array $translatable = ['name', 'breed', 'description'];
+
     protected $fillable = [
-        'name_en',
-        'name_ar',
-        'breed_en',
-        'breed_ar',
+        'name',
+        'breed',
         'gender',
         'date_of_birth',
-        'description_en',
-        'description_ar',
+        'description',
         'price',
         'currency',
         'status',

@@ -7,6 +7,7 @@ import { useLocalized } from '@/composables/useLocalized'
 import { apiErrorMessage } from '@/services/api'
 import { toastError } from '@/services/toast'
 import AppSpinner from '@/components/shared/AppSpinner.vue'
+import TranslationStatusBadge from '@/components/shared/TranslationStatusBadge.vue'
 
 const props = defineProps({
   id: { type: [String, Number], default: null },
@@ -24,14 +25,11 @@ const notFound = ref(false)
 const errors = ref({})
 
 const form = ref({
-  name_en: '',
-  name_ar: '',
-  breed_en: '',
-  breed_ar: '',
+  name: { ar: '', en: '', zh: '' },
+  breed: { ar: '', en: '', zh: '' },
   gender: 'female',
   date_of_birth: '',
-  description_en: '',
-  description_ar: '',
+  description: { ar: '', en: '', zh: '' },
   price: '',
   currency: 'EGP',
   status: 'available',
@@ -40,10 +38,28 @@ const form = ref({
   categories: [],
 })
 
+const nameStatus = computed(() => ({
+  ar: !!form.value.name.ar,
+  en: !!form.value.name.en,
+  zh: !!form.value.name.zh,
+}))
+const breedStatus = computed(() => ({
+  ar: !!form.value.breed.ar,
+  en: !!form.value.breed.en,
+  zh: !!form.value.breed.zh,
+}))
+const descriptionStatus = computed(() => ({
+  ar: !!form.value.description.ar,
+  en: !!form.value.description.en,
+  zh: !!form.value.description.zh,
+}))
+
 const existingImages = ref([])
 const existingVideo = ref(null)
 const newImages = ref([])
 const newVideo = ref(null)
+const videoFileInput = ref(null)
+const videoMode = ref('url')
 const removedMediaIds = ref([])
 
 const newImagePreviews = computed(() =>
@@ -84,11 +100,45 @@ async function removeVideo() {
   newVideo.value = null
 }
 
+function onVideoSelected(event) {
+  newVideo.value = event.target.files[0] || null
+}
+
+function clearNewVideo() {
+  newVideo.value = null
+  if (videoFileInput.value) videoFileInput.value.value = ''
+}
+
+// A new video is either a link or an uploaded file, never both — switching
+// mode clears whichever field belongs to the other mode.
+function setVideoMode(mode) {
+  videoMode.value = mode
+
+  if (mode === 'url') {
+    clearNewVideo()
+  } else {
+    form.value.video_url = ''
+  }
+}
+
+// name/breed/description are per-language groups — always send all three locale
+// keys together (blank string if empty) so the group round-trips as a whole,
+// rather than skipping empty locales like the other, non-translatable fields.
+function appendTranslatable(data, key, group) {
+  Object.entries(group).forEach(([locale, value]) => {
+    data.append(`${key}[${locale}]`, value ?? '')
+  })
+}
+
 function buildPayload() {
   const data = new FormData()
 
+  appendTranslatable(data, 'name', form.value.name)
+  appendTranslatable(data, 'breed', form.value.breed)
+  appendTranslatable(data, 'description', form.value.description)
+
   Object.entries(form.value).forEach(([key, value]) => {
-    if (key === 'categories') return
+    if (['categories', 'name', 'breed', 'description'].includes(key)) return
 
     if (key === 'is_featured') {
       data.append(key, value ? '1' : '0')
@@ -139,14 +189,15 @@ onMounted(async () => {
     const horse = await horsesStore.fetchHorse(props.id)
 
     form.value = {
-      name_en: horse.name.en || '',
-      name_ar: horse.name.ar || '',
-      breed_en: horse.breed.en || '',
-      breed_ar: horse.breed.ar || '',
+      name: { ar: horse.name.ar || '', en: horse.name.en || '', zh: horse.name.zh || '' },
+      breed: { ar: horse.breed.ar || '', en: horse.breed.en || '', zh: horse.breed.zh || '' },
       gender: horse.gender,
       date_of_birth: horse.date_of_birth || '',
-      description_en: horse.description.en || '',
-      description_ar: horse.description.ar || '',
+      description: {
+        ar: horse.description.ar || '',
+        en: horse.description.en || '',
+        zh: horse.description.zh || '',
+      },
       price: horse.price ?? '',
       currency: horse.currency || 'EGP',
       status: horse.status,
@@ -180,50 +231,57 @@ onMounted(async () => {
     <form v-else class="mt-6 space-y-6" @submit.prevent="handleSubmit">
       <!-- Names -->
       <div class="card space-y-4 p-5">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label for="name_en" class="field-label">{{ t('admin.nameEn') }} *</label>
-            <input
-              id="name_en"
-              v-model="form.name_en"
-              type="text"
-              required
-              dir="ltr"
-              class="field-input"
-            />
-            <p v-if="errors.name_en" class="mt-1 text-xs text-red-600">{{ errors.name_en[0] }}</p>
-          </div>
+        <div class="flex items-center justify-between">
+          <span class="field-label">{{ t('admin.nameGroup') }}</span>
+          <TranslationStatusBadge :status="nameStatus" />
+        </div>
+        <div class="grid gap-4 sm:grid-cols-3">
           <div>
             <label for="name_ar" class="field-label">{{ t('admin.nameAr') }} *</label>
             <input
               id="name_ar"
-              v-model="form.name_ar"
+              v-model="form.name.ar"
               type="text"
               required
               dir="rtl"
               class="field-input"
             />
-            <p v-if="errors.name_ar" class="mt-1 text-xs text-red-600">{{ errors.name_ar[0] }}</p>
+            <p v-if="errors['name.ar']" class="mt-1 text-xs text-red-600">{{ errors['name.ar'][0] }}</p>
           </div>
           <div>
-            <label for="breed_en" class="field-label">{{ t('admin.breedEn') }}</label>
+            <label for="name_en" class="field-label">{{ t('admin.nameEn') }} *</label>
             <input
-              id="breed_en"
-              v-model="form.breed_en"
+              id="name_en"
+              v-model="form.name.en"
               type="text"
+              required
               dir="ltr"
               class="field-input"
             />
+            <p v-if="errors['name.en']" class="mt-1 text-xs text-red-600">{{ errors['name.en'][0] }}</p>
           </div>
           <div>
+            <label for="name_zh" class="field-label">{{ t('admin.nameZh') }}</label>
+            <input id="name_zh" v-model="form.name.zh" type="text" dir="ltr" class="field-input" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <span class="field-label">{{ t('admin.breedGroup') }}</span>
+          <TranslationStatusBadge :status="breedStatus" />
+        </div>
+        <div class="grid gap-4 sm:grid-cols-3">
+          <div>
             <label for="breed_ar" class="field-label">{{ t('admin.breedAr') }}</label>
-            <input
-              id="breed_ar"
-              v-model="form.breed_ar"
-              type="text"
-              dir="rtl"
-              class="field-input"
-            />
+            <input id="breed_ar" v-model="form.breed.ar" type="text" dir="rtl" class="field-input" />
+          </div>
+          <div>
+            <label for="breed_en" class="field-label">{{ t('admin.breedEn') }}</label>
+            <input id="breed_en" v-model="form.breed.en" type="text" dir="ltr" class="field-input" />
+          </div>
+          <div>
+            <label for="breed_zh" class="field-label">{{ t('admin.breedZh') }}</label>
+            <input id="breed_zh" v-model="form.breed.zh" type="text" dir="ltr" class="field-input" />
           </div>
         </div>
       </div>
@@ -301,26 +359,42 @@ onMounted(async () => {
       </div>
 
       <!-- Descriptions -->
-      <div class="card grid gap-4 p-5 sm:grid-cols-2">
-        <div>
-          <label for="desc_en" class="field-label">{{ t('admin.descriptionEn') }}</label>
-          <textarea
-            id="desc_en"
-            v-model="form.description_en"
-            rows="5"
-            dir="ltr"
-            class="field-input"
-          />
+      <div class="card space-y-4 p-5">
+        <div class="flex items-center justify-between">
+          <span class="field-label">{{ t('admin.descriptionGroup') }}</span>
+          <TranslationStatusBadge :status="descriptionStatus" />
         </div>
-        <div>
-          <label for="desc_ar" class="field-label">{{ t('admin.descriptionAr') }}</label>
-          <textarea
-            id="desc_ar"
-            v-model="form.description_ar"
-            rows="5"
-            dir="rtl"
-            class="field-input"
-          />
+        <div class="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label for="desc_ar" class="field-label">{{ t('admin.descriptionAr') }}</label>
+            <textarea
+              id="desc_ar"
+              v-model="form.description.ar"
+              rows="5"
+              dir="rtl"
+              class="field-input"
+            />
+          </div>
+          <div>
+            <label for="desc_en" class="field-label">{{ t('admin.descriptionEn') }}</label>
+            <textarea
+              id="desc_en"
+              v-model="form.description.en"
+              rows="5"
+              dir="ltr"
+              class="field-input"
+            />
+          </div>
+          <div>
+            <label for="desc_zh" class="field-label">{{ t('admin.descriptionZh') }}</label>
+            <textarea
+              id="desc_zh"
+              v-model="form.description.zh"
+              rows="5"
+              dir="ltr"
+              class="field-input"
+            />
+          </div>
         </div>
       </div>
 
@@ -385,7 +459,34 @@ onMounted(async () => {
           </button>
         </div>
 
-        <div>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="rounded-full border px-4 py-1.5 text-sm transition"
+            :class="
+              videoMode === 'url'
+                ? 'border-gold-500 bg-gold-50 text-gold-800'
+                : 'border-ink-200 text-ink-600 hover:border-gold-300'
+            "
+            @click="setVideoMode('url')"
+          >
+            {{ t('admin.videoModeUrl') }}
+          </button>
+          <button
+            type="button"
+            class="rounded-full border px-4 py-1.5 text-sm transition"
+            :class="
+              videoMode === 'file'
+                ? 'border-gold-500 bg-gold-50 text-gold-800'
+                : 'border-ink-200 text-ink-600 hover:border-gold-300'
+            "
+            @click="setVideoMode('file')"
+          >
+            {{ t('admin.videoModeFile') }}
+          </button>
+        </div>
+
+        <div v-if="videoMode === 'url'">
           <label for="video_url" class="field-label">{{ t('admin.videoUrl') }}</label>
           <input
             id="video_url"
@@ -398,15 +499,38 @@ onMounted(async () => {
           <p v-if="errors.video_url" class="mt-1 text-xs text-red-600">{{ errors.video_url[0] }}</p>
         </div>
 
-        <div>
-          <label for="video_file" class="field-label">{{ t('admin.videoUpload') }}</label>
-          <input
-            id="video_file"
-            type="file"
-            accept="video/*"
-            class="field-input file:me-3 file:rounded file:border-0 file:bg-ink-100 file:px-3 file:py-1 file:text-sm"
-            @change="newVideo = $event.target.files[0] || null"
-          />
+        <div v-else>
+          <span class="field-label">{{ t('admin.videoUpload') }}</span>
+
+          <div
+            v-if="newVideo"
+            class="mt-1 flex items-center justify-between rounded-lg bg-ink-50 px-4 py-2.5"
+          >
+            <span class="truncate text-sm text-ink-600" dir="ltr">{{ newVideo.name }}</span>
+            <button
+              type="button"
+              class="text-xs text-red-600 hover:underline"
+              @click="clearNewVideo"
+            >
+              {{ t('admin.removeVideo') }}
+            </button>
+          </div>
+
+          <label
+            v-else
+            class="mt-1 flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-ink-200 px-4 py-6 text-sm text-ink-500 transition hover:border-gold-400 hover:text-gold-700"
+          >
+            <input
+              id="video_file"
+              ref="videoFileInput"
+              type="file"
+              accept="video/*"
+              class="sr-only"
+              @change="onVideoSelected"
+            />
+            + {{ t('admin.addVideo') }}
+          </label>
+
           <p v-if="errors.video" class="mt-1 text-xs text-red-600">{{ errors.video[0] }}</p>
         </div>
       </div>
